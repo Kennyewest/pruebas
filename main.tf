@@ -16,7 +16,7 @@ module "vpc" {
   enable_vpn_gateway = false
 
   tags = {
-    Terraform  = "true"
+    Terraform   = "true"
     Environment = "prd"
   }
 }
@@ -55,7 +55,7 @@ resource "aws_security_group" "web_sg" {
 }
 
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "my-website-MooreM"
+  bucket = "my-website-moorem"
 }
 
 resource "aws_s3_bucket_acl" "my_bucket_acl" {
@@ -74,7 +74,7 @@ resource "aws_s3_bucket_website_configuration" "my_bucket_website" {
 resource "aws_s3_object" "index_php" {
   bucket = aws_s3_bucket.my_bucket.bucket
   key    = "index.php"
-  source = "path/to/index.php"
+  source = "/pruebas/archivo-index/index.php"
   acl    = "public-read"
 }
 
@@ -88,12 +88,12 @@ resource "aws_efs_mount_target" "nfs_mount" {
 }
 
 resource "aws_instance" "web_server" {
-  count = 3
-  ami           = "ami-0c55b159cbfafe1f0"
+  count         = 3
+  ami           = "ami-08a0d1e16fc3f61ea"
   instance_type = "t2.micro"
   key_name      = "vockey"
   subnet_id     = element(module.vpc.public_subnets, count.index)
-  security_groups = [aws_security_group.web_sg.name]
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -119,7 +119,7 @@ resource "aws_lb" "web_lb" {
   security_groups    = [aws_security_group.web_sg.id]
   subnets            = module.vpc.public_subnets
 
-  depends_on = [aws_security_group.web_sg, module.vpc]
+  depends_on = [module.vpc, aws_security_group.web_sg]
 }
 
 resource "aws_lb_target_group" "web_tg" {
@@ -165,15 +165,30 @@ resource "aws_iam_role" "ec2_role" {
   name = "ec2_role"
 
   assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Sid": "PublicRead",
-      "Effect":"Allow",
-      "Principal": "*",
-      "Action": ["s3:GetObject"],
-      "Resource": [
-        "${aws_s3_bucket.example.arn}/*"
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
         }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "s3_policy" {
+  name = "s3_policy"
+  role = aws_iam_role.ec2_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:GetObject"]
+        Resource = ["arn:aws:s3:::${aws_s3_bucket.my_bucket.id}/*"]
       }
     ]
   })
@@ -185,3 +200,4 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 data "aws_availability_zones" "available" {}
+
