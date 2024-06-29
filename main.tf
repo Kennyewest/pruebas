@@ -71,11 +71,11 @@ resource "aws_s3_bucket_website_configuration" "my_bucket_website" {
   }
 }
 
-resource "aws_s3_bucket_object" "index_php" {
+resource "aws_s3_object" "index_php" {
   bucket = aws_s3_bucket.my_bucket.bucket
   key    = "index.php"
   acl    = "public-read"
-  source = "${path.module}/pruebas/archivo-index/index.php"
+  source = "${path.module}./pruebas/archivo-index/index.php"
 }
 
 resource "aws_efs_file_system" "nfs" {}
@@ -200,4 +200,3 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 data "aws_availability_zones" "available" {}
-
