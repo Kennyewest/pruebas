@@ -55,7 +55,7 @@ resource "aws_security_group" "web_sg" {
 }
 
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "my-website-moorem"
+  bucket = "my-website-moore"
 }
 
 resource "aws_s3_bucket_acl" "my_bucket_acl" {
@@ -71,11 +71,11 @@ resource "aws_s3_bucket_website_configuration" "my_bucket_website" {
   }
 }
 
-resource "aws_s3_object" "index_php" {
+resource "aws_s3_bucket_object" "index_php" {
   bucket = aws_s3_bucket.my_bucket.bucket
   key    = "index.php"
-  source = "/pruebas/archivo-index/index.php"
   acl    = "public-read"
+  source = "${path.module}/pruebas/archivo-index/index.php"
 }
 
 resource "aws_efs_file_system" "nfs" {}
